@@ -8,7 +8,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.Arrays;
 
 @SpringBootApplication
@@ -79,9 +78,31 @@ public class MergeApplication implements CommandLineRunner {
 	 */
 	private void populateArgs(String[] args) throws ParseException{
 		CommandLineParser parser = new DefaultParser();
-
-
 		CommandLine cmd = parser.parse(options, args);
+
+		//get input files location
+		if (cmd.hasOption("inPath")) {
+			this.inputFilesLocation = cmd.getOptionValue("inPath");
+			if(!checkPathValidity(this.inputFilesLocation)){
+				System.out.println("invalid argument of inPath option. Please provide valid path.");
+				throw new ParseException("invalid argument of inPath option: " + this.inputFilesLocation);
+			}
+		} else {
+			//setting default value as current working directory
+			this.inputFilesLocation = ".";
+		}
+
+		//get output files location
+		if (cmd.hasOption("outPath")) {
+			this.outputFileLocation = cmd.getOptionValue("outPath");
+			if(!checkPathValidity(this.outputFileLocation)){
+				System.out.println("invalid argument of outPath option. Please provide valid path.");
+				throw new ParseException("invalid argument of outPath option: " + this.outputFileLocation);
+			}
+		} else {
+			//setting default value as current working directory
+			this.outputFileLocation = ".";
+		}
 
 		//get Sorted files count
 		if (cmd.hasOption("numberOfFiles")) {
@@ -91,21 +112,10 @@ public class MergeApplication implements CommandLineRunner {
 				throw new ParseException("invalid argument of numberOfFiles option: " + totalFiles);
 			}
 		}
+	}
 
-		//get input files location
-		if (cmd.hasOption("inPath")) {
-			this.inputFilesLocation = cmd.getOptionValue("inPath");
-		} else {
-			//setting default value as current working directory
-			this.inputFilesLocation = ".";
-		}
-
-		//get output files location
-		if (cmd.hasOption("outPath")) {
-			this.outputFileLocation = cmd.getOptionValue("outPath");
-		} else {
-			//setting default value as current working directory
-			this.outputFileLocation = ".";
-		}
+	private boolean checkPathValidity(String path){
+		File file = new File(path);
+		return file.exists();
 	}
 }
