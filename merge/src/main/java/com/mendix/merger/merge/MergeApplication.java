@@ -32,7 +32,7 @@ public class MergeApplication implements CommandLineRunner {
 		} catch (ParseException e){
 			logger.error("Error occurred while parsing command line arguments: {}",e.getMessage());
 			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp( "merge-files", options );
+			formatter.printHelp( "mendix-merger", options );
 			return;
 		}
 		MergeFiles mergeFiles = new MergeFiles(inputFilesLocation, outputFileLocation, totalFiles);
@@ -50,7 +50,7 @@ public class MergeApplication implements CommandLineRunner {
 				.hasArg()
 				.argName("Number of files")
 				.numberOfArgs(1)
-				.desc("provide total number of sorted files to be merged.")
+				.desc("provide total number of sorted files to be merged. This field is mandatory")
 				.build();
 
 		Option inputLocation = Option.builder("inPath")
