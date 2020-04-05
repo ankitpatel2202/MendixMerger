@@ -29,29 +29,8 @@ public class MergeFiles {
         PriorityQueue<HeapNode> heapNodePriorityQueue = new PriorityQueue<>(new HeapNodeComparator());
         File[] files = getFiles();
 
-        int fileReadErrorCount = 0;
         // Create a min heap such that every heap node has first line of a file
-
-        for(int i = 0; i < files.length; i++)
-        {
-            try {
-                InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(files[i]));
-                HeapNode node = new HeapNode(inputStreamReader);
-                String firstWord = node.getNextWord();
-                if(!firstWord.isEmpty()){
-                    node.setWord(firstWord);
-                    heapNodePriorityQueue.add(node);
-                } else {
-                    ++fileReadErrorCount;
-                    logger.warn("Ignoring the file: {} because of the file is empty.", files[i].getName());
-                }
-
-            } catch (IOException e) {
-                ++fileReadErrorCount;
-                logger.warn("Ignoring the file: {} because of an error occurred while reading file : {}", files[i].getName(), e.getCause());
-            }
-        }
-
+        int validFileCount = createInitialMinHeap(heapNodePriorityQueue, files);
 
         BufferedWriter bw = null;
         FileOutputStream fos = null;
@@ -63,7 +42,7 @@ public class MergeFiles {
             int emptyFileCount = 0;
 
             // Now one by one get the minimum element from min heap and replace it with next element.
-            while (emptyFileCount != files.length - fileReadErrorCount)
+            while (emptyFileCount != validFileCount)
             {
                 // Get the minimum element and store it in output file
                 HeapNode root = heapNodePriorityQueue.poll();
@@ -102,7 +81,39 @@ public class MergeFiles {
     }
 
     /**
+     *   Create a min heap such that every heap node has first line of a file and ignore invalid files.
+     *    @return valid files count.
+     */
+    private int createInitialMinHeap(PriorityQueue<HeapNode> heapNodePriorityQueue, File[] files){
+
+        int fileReadErrorCount = 0;
+
+
+        for(int i = 0; i < files.length; i++)
+        {
+            try {
+                InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(files[i]));
+                HeapNode node = new HeapNode(inputStreamReader);
+                String firstWord = node.getNextWord();
+                if(!firstWord.isEmpty()){
+                    node.setWord(firstWord);
+                    heapNodePriorityQueue.add(node);
+                } else {
+                    ++fileReadErrorCount;
+                    logger.warn("Ignoring the file: {} because of the file is empty.", files[i].getName());
+                }
+
+            } catch (IOException e) {
+                ++fileReadErrorCount;
+                logger.warn("Ignoring the file: {} because of an error occurred while reading file : {}", files[i].getName(), e.getCause());
+            }
+        }
+        return files.length - fileReadErrorCount;
+    }
+
+    /**
      *  Parse the current file pointed in the input node and write all words which are less than current root's word into the output file
+     *   @return Next word to be used for the min heap.
      */
     private String getNextWordFromCurrentFile(HeapNode node, PriorityQueue<HeapNode> heapNodePriorityQueue, BufferedWriter bw) throws IOException {
         String nextWord = node.getNextWord();
@@ -119,6 +130,7 @@ public class MergeFiles {
 
     /**
      *  get array of file object of all sorted files
+     *   @return File objects of all input directory file.
      */
     private File[] getFiles(){
         File[] files = new File[totalFiles];
