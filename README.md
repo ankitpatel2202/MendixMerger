@@ -55,6 +55,7 @@ usage: mendix-merger
                                          directory will be used.
 
 Before running the jar file, you need to create a directory named "config" in the same location where jar file is located and then put two files : application.properties and logback-spring.xml in that directory.
+You can specify the logging directory path in the application.properties, where all logs will be generated.
 
 You can run the jar file using below command:
 
