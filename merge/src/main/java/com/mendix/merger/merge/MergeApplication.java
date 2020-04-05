@@ -7,6 +7,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 @SpringBootApplication
@@ -15,6 +17,7 @@ public class MergeApplication implements CommandLineRunner {
 
 	private String inputFilesLocation;
 	private String outputFileLocation;
+	private int totalFiles;
 	private Options options;
 
 	public static void main(String[] args) {
@@ -25,7 +28,16 @@ public class MergeApplication implements CommandLineRunner {
 	public void run(String... args) throws Exception {
 		logger.info("Application started with command-line arguments: {} . \n To kill this application, press Ctrl + C.", Arrays.toString(args));
 		initCommandLineOptions();
-		populateArgs(args);
+		try {
+			populateArgs(args);
+		} catch (ParseException e){
+			logger.error("Error occurred while parsing command line arguments: {}",e.getMessage());
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp( "merge-files", options );
+			return;
+		}
+		MergeFiles mergeFiles = new MergeFiles(inputFilesLocation, outputFileLocation, totalFiles);
+		mergeFiles.merge();
 	}
 
 	/**
@@ -34,20 +46,30 @@ public class MergeApplication implements CommandLineRunner {
 	private void initCommandLineOptions(){
 		options = new Options();
 
-		Option inputLocation = Option.builder("in-path")
+		Option numberOfFiles = Option.builder("numberOfFiles")
+				.required(true)
+				.hasArg()
+				.argName("Number of files")
+				.numberOfArgs(1)
+				.desc("provide total number of sorted files to be merged.")
+				.build();
+
+		Option inputLocation = Option.builder("inPath")
 				.hasArg()
 				.argName("input files location")
 				.numberOfArgs(1)
 				.desc("provide path of the directory where all sorted files are present. If not provided then current working directory will be used.")
 				.build();
 
-		Option outputLocation = Option.builder("out-path")
+		Option outputLocation = Option.builder("outPath")
 				.hasArg()
 				.argName("output location")
 				.numberOfArgs(1)
 				.desc("provide path of the directory where resultant sorted file will be stored. If not provided then current working directory will be used.")
 				.build();
 
+
+		options.addOption(numberOfFiles);
 		options.addOption(inputLocation);
 		options.addOption(outputLocation);
 	}
@@ -55,33 +77,35 @@ public class MergeApplication implements CommandLineRunner {
 	/**
 	 * Populate Command line arguments using command line parser
 	 */
-	private void populateArgs(String[] args){
+	private void populateArgs(String[] args) throws ParseException{
 		CommandLineParser parser = new DefaultParser();
 
-		try {
-			CommandLine cmd = parser.parse(options, args);
 
-			//get input files location
-			if (cmd.hasOption("in-path")){
-				this.inputFilesLocation = cmd.getOptionValue("in-path");
-			}
-			else {
-				//setting default value as current working directory
-				this.inputFilesLocation = ".";
-			}
+		CommandLine cmd = parser.parse(options, args);
 
-			//get output files location
-			if (cmd.hasOption("out-path")){
-				this.outputFileLocation = cmd.getOptionValue("out-path");
-			}
-			else {
-				//setting default value as current working directory
-				this.outputFileLocation = ".";
+		//get Sorted files count
+		if (cmd.hasOption("numberOfFiles")) {
+			this.totalFiles = Integer.parseInt(cmd.getOptionValue("numberOfFiles"));
+			if(totalFiles <= 0){
+				System.out.println("invalid argument of numberOfFiles option. Please provide valid number greater than zero.");
+				throw new ParseException("invalid argument of numberOfFiles option: " + totalFiles);
 			}
 		}
-		catch (ParseException e) {
-			logger.error("Error occurred while parsing command line arguments: {}",e.getMessage());
-			e.printStackTrace();
+
+		//get input files location
+		if (cmd.hasOption("inPath")) {
+			this.inputFilesLocation = cmd.getOptionValue("inPath");
+		} else {
+			//setting default value as current working directory
+			this.inputFilesLocation = ".";
+		}
+
+		//get output files location
+		if (cmd.hasOption("outPath")) {
+			this.outputFileLocation = cmd.getOptionValue("outPath");
+		} else {
+			//setting default value as current working directory
+			this.outputFileLocation = ".";
 		}
 	}
 }
